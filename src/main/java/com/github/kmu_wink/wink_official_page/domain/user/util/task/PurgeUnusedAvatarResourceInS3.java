@@ -27,8 +27,8 @@ public class PurgeUnusedAvatarResourceInS3 {
     private final UserRepository userRepository;
     private final S3Service s3Service;
 
-    @EventListener(ApplicationReadyEvent.class)
-    @Scheduled(cron = "0 0 6 * * *")
+    // @EventListener(ApplicationReadyEvent.class)
+    // @Scheduled(cron = "0 0 6 * * *")
     private void run() {
 
         Set<String> use = userRepository.findAll()

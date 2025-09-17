@@ -32,8 +32,8 @@ public class PurgeUnusedProgramResourceInS3Task {
     private final ProjectRepository projectRepository;
     private final S3Service s3Service;
 
-    @EventListener(ApplicationReadyEvent.class)
-    @Scheduled(cron = "0 0 6 * * *")
+    // @EventListener(ApplicationReadyEvent.class)
+    // @Scheduled(cron = "0 0 6 * * *")
     private void run() {
 
         Set<String> use = Stream.of(
