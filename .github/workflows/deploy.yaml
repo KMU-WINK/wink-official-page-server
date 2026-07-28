@@ -5,51 +5,101 @@ on:
     branches:
       - develop
 
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-to-ec2
+  group: deploy-to-ec2-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   build_image:
+    name: Build ARM64 image
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4.2.0
+        with:
+          platforms: arm64
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4.1.0
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4.5.1
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Build and push Docker image
-        run: |
-          docker build -t backend .
-          docker tag backend ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-          docker push ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+      - name: Build and push ARM64 image
+        uses: docker/build-push-action@v7.2.0
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
 
   deploy_ec2:
+    name: Deploy to ARM64 EC2
     needs: build_image
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1
+      - name: Deploy application
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          IMAGE: ${{ env.IMAGE }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          ENV_FILE: ${{ vars.ENV_FILE }}
+          DOCKER_NETWORK: ${{ vars.DOCKER_NETWORK }}
         with:
           host: ${{ secrets.EC2_HOST }}
           port: ${{ secrets.EC2_PORT }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: IMAGE,IMAGE_TAG,ENV_FILE,DOCKER_NETWORK
+          command_timeout: 10m
           script: |
-            docker pull ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-            docker stop server || true
-            docker rm server || true
+            set -Eeuo pipefail
+
+            FULL_IMAGE="${IMAGE}:${IMAGE_TAG}"
+
+            docker pull --platform linux/arm64 "$FULL_IMAGE"
+            docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1 \
+              || docker network create "$DOCKER_NETWORK"
+
+            docker stop server >/dev/null 2>&1 || true
+            docker rm server >/dev/null 2>&1 || true
+
             docker run -d \
               --name server \
-              --restart always \
-              --env-file ${{ vars.ENV_FILE }} \
-              --network ${{ vars.DOCKER_NETWORK }} \
+              --restart unless-stopped \
+              --init \
+              --platform linux/arm64 \
+              --env-file "$ENV_FILE" \
+              --network "$DOCKER_NETWORK" \
               -p 8080:8080 \
-              ${{ vars.DOCKERHUB_USERNAME }}/${{ vars.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+              "$FULL_IMAGE"
+
+            sleep 5
+
+            if [ "$(docker inspect --format='{{.State.Running}}' server)" != "true" ]; then
+              docker logs server
+              exit 1
+            fi
+
+            docker image prune -f --filter "until=168h"
