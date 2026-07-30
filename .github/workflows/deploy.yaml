@@ -111,8 +111,8 @@ jobs:
                 break
               fi
 
-              status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' http://localhost:8080/health/ready || true)"
-              if [ "$status" = "204" ]; then
+              http_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' http://localhost:8080/health/ready || true)"
+              if [ "$http_status" = "204" ]; then
                 ready=true
                 break
               fi
