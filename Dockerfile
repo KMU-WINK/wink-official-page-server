@@ -1,16 +1,20 @@
-FROM gradle:8.14.2-jdk21-alpine AS builder
+FROM gradle:9.6.1-jdk25-alpine AS builder
 
 WORKDIR /home/gradle/project
 
 COPY --chown=gradle:gradle . .
 
-RUN gradle clean bootJar --no-daemon
+RUN gradle clean :bootstrap:bootJar --no-daemon
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 ENV SPRING_PROFILES_ACTIVE=prod
 
-COPY --from=builder /home/gradle/project/build/libs/*.jar /app.jar
+RUN addgroup -S spring && adduser -S spring -G spring
+
+COPY --from=builder --chown=spring:spring /home/gradle/project/bootstrap/build/libs/*.jar /app.jar
+
+USER spring
 
 EXPOSE 8080
 

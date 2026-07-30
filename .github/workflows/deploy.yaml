@@ -81,6 +81,12 @@ jobs:
             docker pull --platform linux/arm64 "$FULL_IMAGE"
             docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1 \
               || docker network create "$DOCKER_NETWORK"
+            DOCKER_GATEWAY="$(
+              docker network inspect \
+                --format '{{(index .IPAM.Config 0).Gateway}}' \
+                "$DOCKER_NETWORK"
+            )"
+            test -n "$DOCKER_GATEWAY"
 
             docker stop server >/dev/null 2>&1 || true
             docker rm server >/dev/null 2>&1 || true
@@ -92,12 +98,29 @@ jobs:
               --platform linux/arm64 \
               --env-file "$ENV_FILE" \
               --network "$DOCKER_NETWORK" \
-              -p 8080:8080 \
+              --add-host "host.docker.internal:$DOCKER_GATEWAY" \
+              --log-driver json-file \
+              --log-opt max-size=10m \
+              --log-opt max-file=5 \
+              -p 127.0.0.1:8080:8080 \
               "$FULL_IMAGE"
 
-            sleep 5
+            ready=false
+            for _ in $(seq 1 60); do
+              if [ "$(docker inspect --format='{{.State.Running}}' server 2>/dev/null || true)" != "true" ]; then
+                break
+              fi
 
-            if [ "$(docker inspect --format='{{.State.Running}}' server)" != "true" ]; then
+              status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' http://localhost:8080/health/ready || true)"
+              if [ "$status" = "204" ]; then
+                ready=true
+                break
+              fi
+
+              sleep 2
+            done
+
+            if [ "$ready" != "true" ]; then
               docker logs server
               exit 1
             fi

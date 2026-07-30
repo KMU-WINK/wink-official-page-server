@@ -1,0 +1,40 @@
+spring:
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/wink}
+  config:
+    import:
+      - classpath:application.yaml
+  data:
+    mongodb:
+      auto-index-creation: ${MONGODB_AUTO_INDEX_CREATION:true}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      password: ${REDIS_PASSWORD:root}
+      port: ${REDIS_PORT:6379}
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+
+app:
+  auth:
+    cookie-secure: ${AUTH_COOKIE_SECURE:false}
+  recruit:
+    privacy:
+      encryption-key: ${RECRUIT_PII_ENCRYPTION_KEY}
+  jwt:
+    key: ${JWT_SECRET_KEY}
+  sms:
+    id: ${SMS_ID}
+    pw: ${SMS_PASSWORD}
+    send_phone: ${SMS_PHONE_NUMBER}
+  cloud:
+    aws:
+      region: ${AWS_REGION:ap-northeast-2}
+      s3:
+        bucket: ${AWS_S3_BUCKET}
+        public-read-acl-enabled: ${AWS_S3_PUBLIC_READ_ACL_ENABLED:false}
+      credential:
+        accessKey: ${AWS_ACCESS_KEY:}
+        secretKey: ${AWS_SECRET_KEY:}

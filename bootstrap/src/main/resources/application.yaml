@@ -1,0 +1,78 @@
+server:
+  forward-headers-strategy: NATIVE
+  servlet:
+    encoding:
+      charset: UTF-8
+      force-response: true
+
+spring:
+  mail:
+    properties:
+      mail:
+        smtp:
+          auth: true
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT_MS:10000}
+          starttls:
+            enable: true
+          timeout: ${MAIL_READ_TIMEOUT_MS:10000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT_MS:10000}
+  task:
+    scheduling:
+      pool:
+        size: ${SCHEDULING_POOL_SIZE:4}
+  mvc:
+    log-resolved-exception: false
+
+app:
+  security:
+    proxy-client-hmac-key: ${RECRUIT_PROXY_CLIENT_HMAC_KEY}
+  jwt:
+    access-token-expiration-hours: 4
+    refresh-token-expiration-hours: 168
+  program:
+    study:
+      tistory-sync:
+        enabled: ${APP_PROGRAM_STUDY_TISTORY_SYNC_ENABLED:true}
+  mail:
+    outbox:
+      worker-enabled: ${APP_MAIL_OUTBOX_WORKER_ENABLED:true}
+      fixed-delay-ms: ${APP_MAIL_OUTBOX_FIXED_DELAY_MS:5000}
+      batch-size: ${APP_MAIL_OUTBOX_BATCH_SIZE:20}
+      max-attempts: ${APP_MAIL_OUTBOX_MAX_ATTEMPTS:5}
+      base-backoff-seconds: ${APP_MAIL_OUTBOX_BASE_BACKOFF_SECONDS:30}
+      max-state-waits: ${APP_MAIL_OUTBOX_MAX_STATE_WAITS:120}
+      lock-timeout-seconds: ${APP_MAIL_OUTBOX_LOCK_TIMEOUT_SECONDS:300}
+  recruit:
+    sms-outbox:
+      worker-enabled: ${APP_RECRUIT_SMS_OUTBOX_WORKER_ENABLED:true}
+      fixed-delay-ms: ${APP_RECRUIT_SMS_OUTBOX_FIXED_DELAY_MS:5000}
+      batch-size: ${APP_RECRUIT_SMS_OUTBOX_BATCH_SIZE:20}
+      max-attempts: ${APP_RECRUIT_SMS_OUTBOX_MAX_ATTEMPTS:5}
+      base-backoff-seconds: ${APP_RECRUIT_SMS_OUTBOX_BASE_BACKOFF_SECONDS:30}
+      max-state-waits: ${APP_RECRUIT_SMS_OUTBOX_MAX_STATE_WAITS:120}
+      lock-timeout-seconds: ${APP_RECRUIT_SMS_OUTBOX_LOCK_TIMEOUT_SECONDS:300}
+    privacy:
+      migration:
+        enabled: ${APP_RECRUIT_PRIVACY_MIGRATION_ENABLED:true}
+        batch-size: ${APP_RECRUIT_PRIVACY_MIGRATION_BATCH_SIZE:100}
+      retention:
+        enabled: ${APP_RECRUIT_PRIVACY_RETENTION_ENABLED:false}
+        retention-days: ${APP_RECRUIT_PRIVACY_RETENTION_DAYS:90}
+        cron: ${APP_RECRUIT_PRIVACY_RETENTION_CRON:0 30 3 * * *}
+        zone: ${APP_RECRUIT_PRIVACY_RETENTION_ZONE:Asia/Seoul}
+
+springdoc:
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  api-docs:
+    groups:
+      enabled: true
+  swagger-ui:
+    disable-swagger-default-url: true
+    display-request-duration: true
+    defaultModelsExpandDepth: -1
+    groups-order: asc
+    tags-sorter: alpha
+    operations-sorter: alpha
+  cache:
+    disabled: true

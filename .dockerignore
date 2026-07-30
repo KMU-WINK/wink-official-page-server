@@ -1,2 +1,10 @@
-.gi
-.idea
+.git
+.github
+.gradle
+.kotlin
+.omx
+**/build
+*.log
+.env
+.env.*
+!.env.template
