@@ -48,7 +48,7 @@ class MailOutboxRepository(
             .unset("processedAt")
             .unset("failedAt")
             .unset("purgeAt")
-            .unset("lastError")
+            .set("lastError", null)
         mongoTemplate.updateFirst(retryableQuery, retryableUpdate, MailOutbox::class.java)
 
         val query = Query.query(Criteria.where("dedupeKey").`is`(dedupeKey))

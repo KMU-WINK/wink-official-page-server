@@ -50,7 +50,7 @@ class RecruitSmsOutboxRepository(
             .unset("processedAt")
             .unset("failedAt")
             .unset("purgeAt")
-            .unset("lastError")
+            .set("lastError", null)
         mongoTemplate.updateFirst(retryableQuery, retryableUpdate, RecruitSmsOutbox::class.java)
 
         val query = Query.query(Criteria.where("dedupeKey").`is`(dedupeKey))
