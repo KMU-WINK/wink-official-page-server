@@ -13,7 +13,7 @@ import org.springframework.web.client.RestClient
 class SmsSender(
     private val smsProperty: SmsProperty,
 ) : SmsGatewayPort {
-    private val restClient = RestClient.create("https://www.munja123.com/Remote")
+    private val restClient = RestClient.create("https://www.munja123.com/Remote/")
 
     override fun send(messages: Collection<SmsMessage>) {
         val body = postForm(
