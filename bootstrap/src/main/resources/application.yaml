@@ -1,11 +1,11 @@
 server:
   forward-headers-strategy: NATIVE
+
+spring:
   servlet:
     encoding:
       charset: UTF-8
       force-response: true
-
-spring:
   mail:
     properties:
       mail:
